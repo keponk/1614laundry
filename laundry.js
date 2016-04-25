@@ -1,24 +1,14 @@
 
 var fs = require('fs');
+var content = "";
 var casper = require('casper').create({
-    verbose: true,
+    verbose: false,
     logLevel: 'debug',
     pageSettings: {
          loadImages:  false,         // The WebPage instance used by Casper will
          loadPlugins: false,         // use these settings
          userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.4 (KHTML, like Gecko) Chrome/22.0.1229.94 Safari/537.4'
     }
-});
-
-// print out all the messages in the headless browser context
-casper.on('remote.message', function(msg) {
-    this.echo('remote message caught: ' + msg);
-});
-
-
-// print out all the messages in the headless browser context
-casper.on("page.error", function(msg, trace) {
-    this.echo("Page Error: " + msg, "ERROR");
 });
 
 var url = 'https://www.mywavevision.com/';
@@ -28,28 +18,43 @@ casper.start(url, function() {
         'txtUserID' : 'campbell',
         'txtPassword' : 'campbell2016'
     });
-});
-
-casper.then(function() {
     this.click('input[type="submit"][id="btnLogin"]');
 });
 
-
 casper.then(function() {
+    this.echo('Waiting 5s...');
     casper.wait(5000, function() {
-        this.echo('should appear after 5s');
+        this.echo("Done");
     });
 });
 
 casper.then(function() {
-    var html = this.getHTML();
-    this.echo(html);
+    // Grab a screenshot of the page because reasons
+    this.echo("Printing screenshot of the page");
     this.capture('test.png');
-    fs.writeFile('message.txt', html, (err) => {
-        if (err)
-            throw err;
-        console.log('It\'s saved!');
+});
+
+casper.then(function() {
+
+    this.echo("Grabbing table inside iFrame");
+
+    // Switch view to the relevant iframe
+    this.page.switchToChildFrame(2);
+
+    // evaluate using regular jquery
+    raw_table = this.evaluate( function () {
+    	var main_table = document.getElementById('ContentPlaceHolder1_gvRoom');
+        //console.log(main_table.innerHTML);
+        return main_table.innerHTML;
     });
+
+    // Print to file
+    try {
+        fs.write("/home/joel/workspace/git_repos/1614laundry/table.html", raw_table, 'w');
+    } catch(e) {
+    	console.log(e)
+    }
+
 });
 
 
